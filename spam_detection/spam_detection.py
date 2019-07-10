@@ -1,0 +1,67 @@
+import collections
+import nltk
+import os
+import random
+
+# Define some stop words
+stop_words = {
+    'ourselves', 'hers', 'between', 'yourself', 'but', 'again', 
+    'there', 'about', 'once', 'during', 'out', 'very', 'having', 'with', 'they',
+    'own', 'an', 'be', 'some', 'for', 'do', 'its', 'yours', 'such', 'into', 
+    'of', 'most', 'itself', 'other', 'off', 'is', 's', 'am', 'or', 'who', 'as',
+    'from', 'him', 'each', 'the', 'themselves', 'until', 'below', 'are', 'we',
+    'these', 'your', 'his', 'through', 'don', 'nor', 'me', 'were', 'her', 'more',
+    'himself', 'this', 'down', 'should', 'our', 'their', 'while', 'above',
+    'both', 'up', 'to', 'ours', 'had', 'she', 'all', 'no', 'when', 'at', 'any',
+    'before', 'them', 'same', 'and', 'been', 'have', 'in', 'will', 'on', 'does',
+    'yourselves', 'then', 'that', 'because', 'what', 'over', 'why', 'so', 'can',
+    'did', 'not', 'now', 'under', 'he', 'you', 'herself', 'has', 'just', 'where',
+    'too', 'only', 'myself', 'which', 'those', 'i', 'after', 'few', 'whom', 't',
+    'being', 'if', 'theirs', 'my', 'against', 'a', 'by', 'doing', 'it', 'how',
+    'further', 'was', 'here', 'than'}
+
+def load_files(directory):
+    result = []
+    for fname in os.listdir(directory):
+        with open(directory + '/' + fname, 'r', encoding='ISO-8859-1') as f:
+            result.append(f.read())
+    return result
+
+
+def preprocess_sentence(sentence):
+    lemmatizer = nltk.WordNetLemmatizer()
+
+    processed_tokens = nltk.word_tokenize(sentence)
+    processed_tokens =  [w.lower() for w in processed_tokens]
+
+    word_counts = collections.Counter(processed_tokens)
+    uncommon_words = word_counts.most_common()[:-10:-1]
+
+    processed_tokens = [w for w in processed_tokens if w not in stop_words]
+    processed_tokens = [w for w in processed_tokens if w not in uncommon_words]
+
+    processed_tokens = [lemmatizer.lemmatize(w) for w in processed_tokens]
+
+    return processed_tokens
+
+
+def feature_extraction(tokens):
+    return dict(collections.Counter(tokens))
+
+positive_examples = load_files('enron/spam')
+negative_examples = load_files('enron/ham')
+
+# Label the examples
+positive_examples = [preprocess_sentence(email) for email in positive_examples]
+negative_examples = [preprocess_sentence(email) for email in negative_examples]
+
+positive_examples = [(email, 1) for email in positive_examples]
+negative_examples = [(email,0) for email in negative_examples]
+
+all_examples = positive_examples + negative_examples
+random.shuffle(all_examples)
+
+print('{} emails processed.'.format(len(all_examples)))
+
+featurized = [(feature_extraction(corpus), label)
+                for corpus, label in all_examples]
