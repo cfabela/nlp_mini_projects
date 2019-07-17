@@ -48,6 +48,10 @@ def preprocess_sentence(sentence):
 def feature_extraction(tokens):
     return dict(collections.Counter(tokens))
 
+def train_test_spliot(dataset, train_size=0.8):
+    num_training_examples = int(len(dataset) * train_size)
+    return dataset[:num_training_examples], dataset[num_training_examples:]
+
 positive_examples = load_files('enron/spam')
 negative_examples = load_files('enron/ham')
 
@@ -65,3 +69,16 @@ print('{} emails processed.'.format(len(all_examples)))
 
 featurized = [(feature_extraction(corpus), label)
                 for corpus, label in all_examples]
+
+training_set, test_set = train_test_spliot(featurized, train_size=0.7)
+
+model = nltk.classify.NaiveBayesClassifier.train(training_set)
+training_error = nltk.classify.accuracy(model, training_set)
+print('Model training complete. Accuracy on training set: {}'.format(training_error))
+
+testing_error = nltk.classify.accuracy(model, test_set)
+print('Accuracy on test set: {}'.format(testing_error))
+
+
+
+
